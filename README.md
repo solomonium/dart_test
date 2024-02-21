@@ -12,7 +12,7 @@ To test with shorebird, run:
 
 ```sh
 shorebird init
-shorebird release android -- --dart-define=MY_VAR=HELLO
+shorebird release ios -- --dart-define=MY_VAR=HELLO
 shorebird preview
 ```
 
