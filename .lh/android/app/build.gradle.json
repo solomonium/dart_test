@@ -1,0 +1,18 @@
+{
+    "sourceFile": "android/app/build.gradle",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1752583781225,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1752583781225,
+            "name": "Commit-0",
+            "content": "plugins {\n    id \"com.android.application\"\n    id \"kotlin-android\"\n    id \"dev.flutter.flutter-gradle-plugin\"\n}\n\ndef localProperties = new Properties()\ndef localPropertiesFile = rootProject.file('local.properties')\nif (localPropertiesFile.exists()) {\n    localPropertiesFile.withReader('UTF-8') { reader ->\n        localProperties.load(reader)\n    }\n}\n\ndef flutterVersionCode = localProperties.getProperty('flutter.versionCode')\nif (flutterVersionCode == null) {\n    flutterVersionCode = '1'\n}\n\ndef flutterVersionName = localProperties.getProperty('flutter.versionName')\nif (flutterVersionName == null) {\n    flutterVersionName = '1.0'\n}\n\nandroid {\n    namespace \"com.example.dart_define_test\"\n    compileSdkVersion flutter.compileSdkVersion\n    ndkVersion flutter.ndkVersion\n\n    compileOptions {\n        sourceCompatibility JavaVersion.VERSION_1_8\n        targetCompatibility JavaVersion.VERSION_1_8\n    }\n\n    kotlinOptions {\n        jvmTarget = '1.8'\n    }\n\n    sourceSets {\n        main.java.srcDirs += 'src/main/kotlin'\n    }\n\n    defaultConfig {\n        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).\n        applicationId \"com.example.dart_define_test\"\n        // You can update the following values to match your application needs.\n        // For more information, see: https://docs.flutter.dev/deployment/android#reviewing-the-gradle-build-configuration.\n        minSdkVersion flutter.minSdkVersion\n        targetSdkVersion flutter.targetSdkVersion\n        versionCode flutterVersionCode.toInteger()\n        versionName flutterVersionName\n    }\n\n    signingConfigs {\n        release {\n            if (System.getenv()[\"CI\"]) { // CI=true is exported by Codemagic\n                storeFile file(System.getenv()[\"CM_KEYSTORE_PATH\"])\n                storePassword System.getenv()[\"CM_KEYSTORE_PASSWORD\"]\n                keyAlias System.getenv()[\"CM_KEY_ALIAS\"]\n                keyPassword System.getenv()[\"CM_KEY_PASSWORD\"]\n            } else {\n                keyAlias keystoreProperties['keyAlias']\n                keyPassword keystoreProperties['keyPassword']\n                storeFile keystoreProperties['storeFile'] ? file(keystoreProperties['storeFile']) : null\n                storePassword keystoreProperties['storePassword']\n            }\n        }\n    }\n    buildTypes {\n        release {\n            signingConfig signingConfigs.release\n        }\n    }\n}\n\nflutter {\n    source '../..'\n}\n\ndependencies {}\n"
+        }
+    ]
+}

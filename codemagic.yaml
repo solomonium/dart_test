@@ -1,0 +1,127 @@
+workflows:
+  android-workflow:
+    name: Android Sample Workflow
+    instance_type: mac_mini_m2
+    max_build_duration: 120
+    environment:
+      flutter: stable
+      android_signing:
+        - cm_keystore_credentials
+      groups:
+        - google_credentials
+        # - shorebird_credentials
+      vars:
+        JAVA_TOOL_OPTIONS: "-Xmx5g"
+    scripts:
+      - name: Set up local.properties
+        script: echo "flutter.sdk=$HOME/programs/flutter" > "$CM_BUILD_DIR/android/local.properties"
+      - name: Install Flutter dependencies
+        script: |
+          flutter pub get
+      # - name: Install Shorebird
+      #   script: |
+      #     # Install Shorebird
+      #     curl --proto '=https' --tlsv1.2 https://raw.githubusercontent.com/shorebirdtech/install/main/install.sh -sSf | bash
+
+      #     # Add Shorebird to PATH
+      #     export PATH="/Users/builder/.shorebird/bin:$PATH"
+      #     export PATH="$HOME/.shorebird/bin:$PATH" >> $CM_ENV
+      #     echo PATH="$HOME/.shorebird/bin:$PATH" >> $CM_ENV
+
+      # - name: Initialize Shorebird
+      #   script: |
+      #     shorebird init --force --verbose
+      # - name: Get Flutter Version
+      #   script: |
+      #     # Auto-detect project's Flutter version
+      #     FLUTTER_VERSION=$(cat pubspec.yaml | grep "sdk:" | cut -d':' -f2 | tr -d '" ' | cut -d' ' -f1)
+      #     RELEASE_VERSION=$(grep "version:" ./pubspec.yaml | awk '{print $2}')
+      #     # echo "SHOREBIRD_RELEASE_VERSION=$(echo $RELEASE_VERSION)" >> $CM_ENV
+      #     # # echo "SHOREBIRD_RELEASE_VERSION=$FLUTTER_VERSION" >> $CM_ENV
+      #     echo "Using Flutter version: $FLUTTER_VERSION"
+      # - name: Build APK debug
+      #   script: |
+      #     flutter build apk --debug
+      # - name: Shorebird Release
+      #   script: |
+      #     shorebird flutter versions list
+      #     shorebird release android \
+      #       --flutter-version="$FLUTTER_VERSION" \
+      # - name: Create Android emulator
+      #   script: |
+      #     export PATH="$PATH":"$ANDROID_HOME/cmdline-tools/latest/bin"
+      #     echo y | sdkmanager "system-images;android-34;google_apis;x86_64"
+      #     echo no | avdmanager create avd -n emulator -k "system-images;android-34;google_apis;x86_64" --device "pixel_4"
+      #     emulator -memory 2048 -avd emulator -no-audio -gpu swiftshader_indirect -debug-init -wipe-data & adb wait-for-device
+      # - name: Launch emulator
+      #   script: |
+      #     flutter emulators --list-avds
+      #     cd $ANDROID_HOME/tools && emulator -avd emulator & adb wait-for-device
+      #     adb install -r build/app/outputs/flutter-apk/app-debug.apk
+      #     adb shell am start -n com.solo.flutter_codemagic_app/.MainActivity
+
+      - name: Build AAB with Flutter
+        script:
+          CURRENT_BUILD_NUMBER=$(google-play get-latest-build-number --package-name "com.solo.flutter_codemagic_app" --tracks="internal")
+          echo "versionCode=$((CURRENT_BUILD_NUMBER + 1))" > "$CM_BUILD_DIR/version.properties"
+          flutter build appbundle --release --build-number=$(($CURRENT_BUILD_NUMBER + 1))
+    artifacts:
+      - build/**/outputs/**/*.aab
+      - build/**/outputs/**/mapping.txt
+      - flutter_drive.log
+    publishing:
+      email:
+        recipients:
+          - solomon@codemagic.io
+      google_play:
+        track: internal
+        credentials: $GOOGLE_PLAY_SERVICE_ACCOUNT_CREDENTIALS
+        submit_as_draft: true
+
+
+
+
+
+
+workflows:
+  ios-workflow:
+    name: iOS Workflow
+    instance_type: mac_mini_m2
+    max_build_duration: 120
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: "dev"
+          include: true
+      cancel_previous_builds: false
+    environment:
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+      groups:
+        # - shorebird_credentials
+        - appstore_credentials
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.solo.flutterCodemagicApp
+    integrations:
+      app_store_connect: SolomonAPIKey
+    scripts:
+      - name: Set up code signing settings on Xcode project
+        script: xcode-project use-profiles
+      # - name: Timeout test
+      #   script: |
+      #     # Will timeout after 30s but continue script
+      #     sleep 2000 || echo "Timeout simulated - continuing"
+      #     echo "Running post-timeout operations"
+      - name: Get Flutter packages
+        script: flutter pub get
+      - name: Flutter build ipa
+        script: |
+          flutter build ipa --release \
+            --export-options-plist="/Users/builder/export_options.plist"
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+      - flutter_drive.log
